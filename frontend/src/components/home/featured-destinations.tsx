@@ -2,21 +2,12 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { MapPin, Clock, Users, Star } from 'lucide-react'
+import { MapPin, Clock, Users, Star, Heart, ArrowRight } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { formatCurrency } from '@/lib/utils'
-
-interface Destination {
-  id: number
-  name: string
-  description: string
-  country: string
-  city: string
-  price: number
-  duration: number
-  max_guests: number
-  images: string[]
-  features: string[]
-}
+import { Button } from '@/components/ui/button'
+import WishlistButton from '@/components/wishlist/wishlist-button'
+import { Destination } from '@/types'
 
 interface FeaturedDestinationsProps {
   destinations?: Destination[]
@@ -35,7 +26,9 @@ export default function FeaturedDestinations({ destinations = [] }: FeaturedDest
       duration: 7,
       max_guests: 4,
       images: ["https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop"],
-      features: ["Overwater Bungalows", "Private Beach", "Spa & Wellness"]
+      features: ["Overwater Bungalows", "Private Beach", "Spa & Wellness"],
+      created_at: "2024-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z"
     },
     {
       id: 2,
@@ -47,7 +40,9 @@ export default function FeaturedDestinations({ destinations = [] }: FeaturedDest
       duration: 10,
       max_guests: 8,
       images: ["https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800&h=600&fit=crop"],
-      features: ["Eco Lodge", "Wildlife Spotting", "Canoe Expeditions"]
+      features: ["Eco Lodge", "Wildlife Spotting", "Canoe Expeditions"],
+      created_at: "2024-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z"
     },
     {
       id: 3,
@@ -59,134 +54,167 @@ export default function FeaturedDestinations({ destinations = [] }: FeaturedDest
       duration: 5,
       max_guests: 6,
       images: ["https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=800&h=600&fit=crop"],
-      features: ["Luxury Tents", "Camel Trekking", "Stargazing"]
+      features: ["Luxury Tents", "Camel Trekking", "Stargazing"],
+      created_at: "2024-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z"
     }
   ]
 
   const displayDestinations = destinations.length > 0 ? destinations.slice(0, 3) : mockDestinations
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl md:text-5xl font-display font-bold text-gray-900 mb-6">
             Featured Destinations
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
             Discover our most popular exotic destinations, carefully curated for unforgettable experiences
           </p>
-        </div>
+        </motion.div>
 
         {/* Destinations Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {displayDestinations.map((destination) => (
-            <div
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ staggerChildren: 0.2, delayChildren: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16"
+        >
+          {displayDestinations.map((destination, index) => (
+            <motion.div
               key={destination.id}
-              className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 group"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.2 }}
+              whileHover={{ y: -8, scale: 1.02 }}
             >
-              {/* Image */}
-              <div className="relative h-64 overflow-hidden">
-                <Image
-                  src={destination.images[0] || '/placeholder-destination.jpg'}
-                  alt={destination.name}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1">
-                  <div className="flex items-center space-x-1">
-                    <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                    <span className="text-sm font-medium">4.8</span>
+              <div className="bg-white rounded-3xl shadow-xl overflow-hidden group border border-gray-100">
+                {/* Image */}
+                <div className="relative h-72 overflow-hidden">
+                  <Image
+                    src={destination.images[0] || '/placeholder-destination.jpg'}
+                    alt={destination.name}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+                  {/* Rating Badge */}
+                  <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg">
+                    <div className="flex items-center space-x-1">
+                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                      <span className="text-sm font-semibold text-gray-900">4.9</span>
+                    </div>
+                  </div>
+
+                  {/* Wishlist Button */}
+                  <div className="absolute top-4 left-4">
+                    <WishlistButton
+                      destination={destination}
+                      size="md"
+                      variant="icon"
+                    />
+                  </div>
+
+                  {/* Price Badge */}
+                  <div className="absolute bottom-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-full font-bold shadow-lg">
+                    {formatCurrency(destination.price)}
                   </div>
                 </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-6">
-                <div className="flex items-center text-sm text-gray-500 mb-2">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {destination.city}, {destination.country}
-                </div>
                 
-                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors">
-                  {destination.name}
-                </h3>
-                
-                <p className="text-gray-600 mb-4 line-clamp-2">
-                  {destination.description}
-                </p>
+                {/* Content */}
+                <div className="p-8">
+                  <div className="flex items-center text-sm text-gray-500 mb-3">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    {destination.city}, {destination.country}
+                  </div>
 
-                {/* Features */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {destination.features.slice(0, 2).map((feature, index) => (
-                    <span
-                      key={index}
-                      className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
+                    {destination.name}
+                  </h3>
+
+                  <p className="text-gray-600 mb-6 line-clamp-2 leading-relaxed">
+                    {destination.description}
+                  </p>
+
+                  {/* Features */}
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {destination.features.slice(0, 2).map((feature, featureIndex) => (
+                      <span
+                        key={featureIndex}
+                        className="bg-blue-50 text-blue-700 text-sm px-3 py-1.5 rounded-full font-medium"
+                      >
+                        {feature}
+                      </span>
+                    ))}
+                    {destination.features.length > 2 && (
+                      <span className="text-sm text-gray-500 px-3 py-1.5">
+                        +{destination.features.length - 2} more
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Details */}
+                  <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 mr-1" />
+                      {destination.duration} days
+                    </div>
+                    <div className="flex items-center">
+                      <Users className="h-4 w-4 mr-1" />
+                      Up to {destination.max_guests} guests
+                    </div>
+                  </div>
+
+                  {/* CTA */}
+                  <Link href={`/destinations/${destination.id}`}>
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      className="w-full font-semibold shadow-lg hover:shadow-xl"
+                      rightIcon={<ArrowRight className="h-4 w-4" />}
                     >
-                      {feature}
-                    </span>
-                  ))}
-                  {destination.features.length > 2 && (
-                    <span className="text-xs text-gray-500">
-                      +{destination.features.length - 2} more
-                    </span>
-                  )}
-                </div>
-
-                {/* Details */}
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <div className="flex items-center">
-                    <Clock className="h-4 w-4 mr-1" />
-                    {destination.duration} days
-                  </div>
-                  <div className="flex items-center">
-                    <Users className="h-4 w-4 mr-1" />
-                    Up to {destination.max_guests} guests
-                  </div>
-                </div>
-
-                {/* Price and CTA */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-2xl font-bold text-gray-900">
-                      {formatCurrency(destination.price)}
-                    </span>
-                    <span className="text-gray-500 text-sm ml-1">per person</span>
-                  </div>
-                  <Link
-                    href={`/destinations/${destination.id}`}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    View Details
+                      View Details
+                    </Button>
                   </Link>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
+
 
         {/* View All Button */}
-        <div className="text-center">
-          <Link
-            href="/destinations"
-            className="inline-flex items-center bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 rounded-full font-semibold transition-colors"
-          >
-            View All Destinations
-            <svg
-              className="ml-2 h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="text-center"
+        >
+          <Link href="/destinations">
+            <Button
+              variant="outline"
+              size="xl"
+              className="border-2 border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white px-12 py-4 font-semibold shadow-lg hover:shadow-xl rounded-full"
+              rightIcon={<ArrowRight className="h-5 w-5" />}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 8l4 4m0 0l-4 4m4-4H3"
-              />
-            </svg>
+              View All Destinations
+            </Button>
           </Link>
-        </div>
+        </motion.div>
       </div>
     </section>
   )

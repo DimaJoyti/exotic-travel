@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, MapPin, Clock, Users, Star, Calendar, Heart, Share2, Check } from 'lucide-react'
+import { ArrowLeft, MapPin, Clock, Users, Star, Calendar, Heart, Share2, Check, Map, Eye, TrendingUp, Layers, Image as ImageIcon } from 'lucide-react'
 import { Destination } from '@/types'
 import { DestinationsService } from '@/lib/destinations'
 import { formatCurrency } from '@/lib/utils'
@@ -13,6 +13,11 @@ import ReviewsSection from '@/components/reviews/reviews-section'
 import { ImageGrid } from '@/components/images/image-gallery'
 import OptimizedImage, { HeroImage } from '@/components/images/optimized-image'
 import { ImagesService } from '@/lib/images'
+// import InteractiveMap from '@/components/maps/interactive-map'
+// import WishlistButton from '@/components/wishlist/wishlist-button'
+// import RealTimeIndicator from '@/components/real-time/real-time-indicators'
+// import PanoramicViewer from '@/components/images/panoramic-viewer'
+// import DestinationComparison from '@/components/comparison/destination-comparison'
 
 export default function DestinationDetailPage() {
   const params = useParams()
@@ -23,6 +28,11 @@ export default function DestinationDetailPage() {
   const [error, setError] = useState('')
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [showMap, setShowMap] = useState(false)
+  const [showComparison, setShowComparison] = useState(false)
+  const [show360View, setShow360View] = useState(false)
+  const [relatedDestinations, setRelatedDestinations] = useState<Destination[]>([])
+  const [activeTab, setActiveTab] = useState<'overview' | 'gallery' | 'map' | '360' | 'reviews'>('overview')
 
   const destinationId = params?.id ? Number(params.id) : null
 
@@ -53,6 +63,17 @@ export default function DestinationDetailPage() {
         }
 
         setDestination(data)
+
+        // Load related destinations for comparison
+        try {
+          const mockDestinations = DestinationsService.getMockDestinations()
+          const related = mockDestinations
+            .filter(d => d.id !== data.id && d.country === data.country)
+            .slice(0, 3)
+          setRelatedDestinations(related)
+        } catch (relatedError) {
+          console.warn('Failed to load related destinations:', relatedError)
+        }
       } catch (err) {
         setError('Failed to load destination. Please try again.')
         console.error('Error loading destination:', err)
@@ -128,7 +149,7 @@ export default function DestinationDetailPage() {
               <ArrowLeft className="h-5 w-5 mr-2" />
               Back to destinations
             </button>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <button
                 onClick={() => setIsFavorite(!isFavorite)}
                 className={`p-2 rounded-full transition-colors ${
@@ -143,39 +164,66 @@ export default function DestinationDetailPage() {
               >
                 <Share2 className="h-5 w-5" />
               </button>
+              <button
+                onClick={() => setShowComparison(true)}
+                className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                title="Compare destinations"
+              >
+                <Layers className="h-5 w-5" />
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Tab Navigation */}
+        <div className="mb-8">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { id: 'overview', label: 'Overview', icon: Eye },
+                { id: 'gallery', label: 'Gallery', icon: ImageIcon },
+                { id: 'map', label: 'Map', icon: Map },
+                { id: '360', label: '360° View', icon: TrendingUp },
+                { id: 'reviews', label: 'Reviews', icon: Star }
+              ].map((tab) => {
+                const Icon = tab.icon
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as 'overview' | 'gallery' | 'map' | '360' | 'reviews')}
+                    className={`
+                      flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors
+                      ${activeTab === tab.id
+                        ? 'border-brand-500 text-brand-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }
+                    `}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{tab.label}</span>
+                  </button>
+                )
+              })}
+            </nav>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
-            {/* Image Gallery */}
-            <div className="mb-8">
-              <ImageGrid
-                images={destination.images.map((image, index) => ({
-                  id: `img_${index}`,
-                  filename: `${destination.name}_${index + 1}.jpg`,
-                  originalName: `${destination.name} Image ${index + 1}`,
-                  mimeType: 'image/jpeg',
-                  size: 2048576,
-                  width: 1920,
-                  height: 1080,
-                  url: image,
-                  thumbnailUrl: image,
-                  uploadedAt: new Date().toISOString(),
-                  uploadedBy: 'admin',
-                  alt: `${destination.name} - Image ${index + 1}`,
-                  caption: `Beautiful view of ${destination.name}`,
-                  tags: ['destination', destination.country.toLowerCase()]
-                }))}
-                columns={1}
-                showOverlay={true}
-                className="mb-4"
-              />
-            </div>
+            {/* Tab Content */}
+            {activeTab === 'overview' && (
+              <div className="space-y-8">
+                {/* Hero Image */}
+                <div className="aspect-video bg-gray-200 rounded-2xl overflow-hidden">
+                  <HeroImage
+                    src={destination.images[0] || '/placeholder-destination.jpg'}
+                    alt={destination.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
 
             {/* Destination Info */}
             <div className="mb-8">
@@ -222,32 +270,83 @@ export default function DestinationDetailPage() {
               </div>
             </div>
 
-            {/* Itinerary Preview */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Sample Itinerary</h2>
-              <div className="space-y-4">
-                {[
-                  { day: 1, title: "Arrival & Welcome", description: "Airport transfer and welcome dinner" },
-                  { day: 2, title: "Exploration Begins", description: "Guided tour of main attractions" },
-                  { day: 3, title: "Adventure Day", description: "Outdoor activities and cultural experiences" },
-                  { day: 4, title: "Relaxation", description: "Spa day and leisure activities" },
-                ].slice(0, Math.min(4, destination.duration)).map((item, index) => (
-                  <div key={index} className="flex">
-                    <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mr-4">
-                      <span className="text-primary font-semibold">{item.day}</span>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{item.title}</h3>
-                      <p className="text-gray-600">{item.description}</p>
-                    </div>
+                {/* Itinerary Preview */}
+                <div className="mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Sample Itinerary</h2>
+                  <div className="space-y-4">
+                    {[
+                      { day: 1, title: "Arrival & Welcome", description: "Airport transfer and welcome dinner" },
+                      { day: 2, title: "Exploration Begins", description: "Guided tour of main attractions" },
+                      { day: 3, title: "Adventure Day", description: "Outdoor activities and cultural experiences" },
+                      { day: 4, title: "Relaxation", description: "Spa day and leisure activities" },
+                    ].slice(0, Math.min(4, destination.duration)).map((item, index) => (
+                      <div key={index} className="flex">
+                        <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mr-4">
+                          <span className="text-primary font-semibold">{item.day}</span>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{item.title}</h3>
+                          <p className="text-gray-600">{item.description}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Interactive Map */}
+            {activeTab === 'map' && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Location</h2>
+                <div className="bg-gray-200 rounded-lg h-96 flex items-center justify-center">
+                  <div className="text-center text-gray-600">
+                    <div className="text-lg font-medium mb-2">Interactive Map</div>
+                    <div className="text-sm">Map view coming soon</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 360° View */}
+            {activeTab === '360' && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">360° Experience</h2>
+                <div className="bg-gray-200 rounded-lg h-96 flex items-center justify-center">
+                  <div className="text-center text-gray-600">
+                    <div className="text-lg font-medium mb-2">360° Panoramic View</div>
+                    <div className="text-sm">Immersive view coming soon</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Reviews */}
+            {activeTab === 'reviews' && (
+              <div className="mb-8">
+                <ReviewsSection destinationId={destination.id} />
+              </div>
+            )}
           </div>
 
           {/* Booking Sidebar */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-6">
+            {/* Real-time Indicators */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Live Updates</h3>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                  <span className="text-xs text-gray-500">Live updates</span>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-blue-700">
+                  <div className="font-medium text-sm">Price Stable</div>
+                  <div className="text-xs opacity-75">No recent price changes</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Booking Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 sticky top-8">
               <div className="mb-6">
                 <div className="flex items-baseline">
@@ -350,6 +449,24 @@ export default function DestinationDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Comparison Modal */}
+      {showComparison && relatedDestinations.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="max-w-6xl w-full max-h-[90vh] overflow-y-auto bg-white rounded-lg p-8">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Destination Comparison</h2>
+              <p className="text-gray-600 mb-6">Compare {destination.name} with similar destinations</p>
+              <button
+                onClick={() => setShowComparison(false)}
+                className="bg-brand-500 text-white px-6 py-2 rounded-lg hover:bg-brand-600 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

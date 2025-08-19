@@ -217,7 +217,7 @@ export class ReviewsService {
     }
 
     // Apply sorting
-    let sortedReviews = [...mockReviews]
+    const sortedReviews = [...mockReviews]
     switch (sortBy) {
       case 'newest':
         sortedReviews.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())

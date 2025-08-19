@@ -17,7 +17,10 @@ import { useSearchParams } from 'next/navigation'
  */
 export function useSafeSearchParams(): URLSearchParams | null {
   const [params, setParams] = useState<URLSearchParams | null>(null)
-  
+
+  // Always call useSearchParams at the top level
+  const nextSearchParams = useSearchParams()
+
   useEffect(() => {
     // Fallback to manual URL parsing if useSearchParams fails
     try {
@@ -30,14 +33,6 @@ export function useSafeSearchParams(): URLSearchParams | null {
       setParams(new URLSearchParams())
     }
   }, [])
-
-  // Try to use Next.js useSearchParams, but fall back to manual parsing
-  let nextSearchParams: URLSearchParams | null = null
-  try {
-    nextSearchParams = useSearchParams()
-  } catch (error) {
-    console.warn('useSearchParams failed, using fallback:', error)
-  }
 
   return nextSearchParams || params
 }

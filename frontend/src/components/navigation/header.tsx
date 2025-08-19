@@ -2,7 +2,9 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Menu, X, User, LogOut } from 'lucide-react'
+import { Menu, X, User, LogOut, Heart, Search, Brain, Zap } from 'lucide-react'
+// import SmartNotifications from '@/components/notifications/smart-notifications'
+// import { WishlistCounter } from '@/components/wishlist/wishlist-button'
 
 interface HeaderProps {
   user?: {
@@ -49,6 +51,24 @@ export default function Header({ user, onLogout }: HeaderProps) {
             >
               Destinations
             </Link>
+            {user && (
+              <>
+                <Link
+                  href="/recommendations"
+                  className="text-gray-900 hover:text-primary px-3 py-2 text-sm font-medium transition-colors flex items-center space-x-1"
+                >
+                  <Brain className="h-4 w-4" />
+                  <span>For You</span>
+                </Link>
+                <Link
+                  href="/innovation"
+                  className="text-gray-900 hover:text-primary px-3 py-2 text-sm font-medium transition-colors flex items-center space-x-1"
+                >
+                  <Zap className="h-4 w-4" />
+                  <span>Innovation</span>
+                </Link>
+              </>
+            )}
             <Link
               href="/about"
               className="text-gray-900 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
@@ -66,25 +86,74 @@ export default function Header({ user, onLogout }: HeaderProps) {
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
-              <div className="relative">
-                <button
-                  onClick={toggleUserMenu}
-                  className="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors"
+              <>
+                {/* Wishlist Counter */}
+                <Link
+                  href="/wishlist"
+                  className="relative p-2 text-gray-600 hover:text-primary transition-colors"
                 >
-                  <User className="h-5 w-5" />
-                  <span className="text-sm font-medium">
-                    {user.first_name} {user.last_name}
+                  <Heart className="h-6 w-6" />
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                    3
+                  </span>
+                </Link>
+
+                {/* Notifications */}
+                <button className="relative p-2 text-gray-600 hover:text-primary transition-colors">
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
+                  </svg>
+                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                    2
                   </span>
                 </button>
+
+                {/* User Menu */}
+                <div className="relative">
+                  <button
+                    onClick={toggleUserMenu}
+                    className="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors"
+                  >
+                    <User className="h-5 w-5" />
+                    <span className="text-sm font-medium">
+                      {user.first_name} {user.last_name}
+                    </span>
+                  </button>
                 
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50">
                     <Link
                       href="/dashboard"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
-                      Dashboard
+                      <User className="h-4 w-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                    <Link
+                      href="/recommendations"
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <Brain className="h-4 w-4" />
+                      <span>Recommendations</span>
+                    </Link>
+                    <Link
+                      href="/innovation"
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <Zap className="h-4 w-4" />
+                      <span>Innovation Hub</span>
+                    </Link>
+                    <Link
+                      href="/wishlist"
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <Heart className="h-4 w-4" />
+                      <span>Wishlist</span>
                     </Link>
                     <Link
                       href="/bookings"
@@ -113,7 +182,8 @@ export default function Header({ user, onLogout }: HeaderProps) {
                     </button>
                   </div>
                 )}
-              </div>
+                </div>
+              </>
             ) : (
               <>
                 <Link
@@ -193,6 +263,14 @@ export default function Header({ user, onLogout }: HeaderProps) {
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Dashboard
+                    </Link>
+                    <Link
+                      href="/innovation"
+                      className="flex items-center space-x-2 text-gray-900 hover:text-primary px-3 py-2 text-base font-medium transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Zap className="h-4 w-4" />
+                      <span>Innovation Hub</span>
                     </Link>
                     <Link
                       href="/bookings"

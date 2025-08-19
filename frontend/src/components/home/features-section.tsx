@@ -1,94 +1,72 @@
-import { Shield, Globe, Clock, Award, Users, Headphones } from 'lucide-react'
-
-const features = [
-  {
-    icon: Globe,
-    title: 'Exotic Destinations',
-    description: 'Discover unique and breathtaking locations that most travelers never experience.',
-  },
-  {
-    icon: Shield,
-    title: 'Secure Booking',
-    description: 'Your payments and personal information are protected with bank-level security.',
-  },
-  {
-    icon: Clock,
-    title: '24/7 Support',
-    description: 'Our travel experts are available around the clock to assist with your journey.',
-  },
-  {
-    icon: Award,
-    title: 'Best Price Guarantee',
-    description: 'We guarantee the best prices for all our destinations with no hidden fees.',
-  },
-  {
-    icon: Users,
-    title: 'Expert Guides',
-    description: 'Local experts and certified guides ensure authentic and safe experiences.',
-  },
-  {
-    icon: Headphones,
-    title: 'Personalized Service',
-    description: 'Tailored itineraries and personalized recommendations for your perfect trip.',
-  },
-]
-
 export default function FeaturesSection() {
   return (
-    <section className="py-16 bg-white">
+    <section className="py-20 bg-gradient-to-b from-white to-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
             Why Choose ExoticTravel?
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            We're committed to providing you with extraordinary travel experiences 
+          <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+            We're committed to providing you with extraordinary travel experiences
             that create memories to last a lifetime
           </p>
         </div>
 
-        {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => {
-            const IconComponent = feature.icon
-            return (
-              <div
-                key={index}
-                className="text-center p-6 rounded-xl hover:bg-gray-50 transition-colors duration-200 group"
-              >
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4 group-hover:bg-primary/20 transition-colors">
-                  <IconComponent className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {feature.description}
-                </p>
-              </div>
-            )
-          })}
+          <div className="text-center p-8 rounded-2xl bg-white shadow-lg border border-gray-100">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl mb-6">
+              <div className="h-10 w-10 bg-blue-600 rounded"></div>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              Exotic Destinations
+            </h3>
+            <p className="text-gray-600 leading-relaxed text-lg">
+              Discover unique and breathtaking locations that most travelers never experience.
+            </p>
+          </div>
+
+          <div className="text-center p-8 rounded-2xl bg-white shadow-lg border border-gray-100">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl mb-6">
+              <div className="h-10 w-10 bg-blue-600 rounded"></div>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              Secure Booking
+            </h3>
+            <p className="text-gray-600 leading-relaxed text-lg">
+              Your payments and personal information are protected with bank-level security.
+            </p>
+          </div>
+
+          <div className="text-center p-8 rounded-2xl bg-white shadow-lg border border-gray-100">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl mb-6">
+              <div className="h-10 w-10 bg-blue-600 rounded"></div>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              24/7 Support
+            </h3>
+            <p className="text-gray-600 leading-relaxed text-lg">
+              Our travel experts are available around the clock to assist with your journey.
+            </p>
+          </div>
         </div>
 
-        {/* Stats Section */}
-        <div className="mt-16 bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-8 text-white">
+        <div className="mt-20 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-600 rounded-3xl p-12 text-white shadow-2xl">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-3xl md:text-4xl font-bold mb-2">50+</div>
-              <div className="text-primary-foreground/80">Destinations</div>
+              <div className="text-4xl md:text-5xl font-bold mb-3">50+</div>
+              <div className="text-white/90 text-lg font-medium">Destinations</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold mb-2">10K+</div>
-              <div className="text-primary-foreground/80">Happy Travelers</div>
+              <div className="text-4xl md:text-5xl font-bold mb-3">10K+</div>
+              <div className="text-white/90 text-lg font-medium">Happy Travelers</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold mb-2">98%</div>
-              <div className="text-primary-foreground/80">Satisfaction Rate</div>
+              <div className="text-4xl md:text-5xl font-bold mb-3">98%</div>
+              <div className="text-white/90 text-lg font-medium">Satisfaction Rate</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold mb-2">24/7</div>
-              <div className="text-primary-foreground/80">Support</div>
+              <div className="text-4xl md:text-5xl font-bold mb-3">24/7</div>
+              <div className="text-white/90 text-lg font-medium">Support</div>
             </div>
           </div>
         </div>

@@ -1,10 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Search, Filter, X, Calendar, Users, DollarSign, MapPin, Star } from 'lucide-react'
+import { Search, Filter, X, Calendar, Users, DollarSign, MapPin, Star, Loader2, ArrowRight } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { DestinationsService } from '@/lib/destinations'
 import { Destination } from '@/types'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { FadeIn, ScaleIn } from '@/components/ui/animated'
 
 interface SearchFilters {
   query: string
@@ -46,8 +50,12 @@ export default function AdvancedSearch({
     sortOrder: 'asc',
     ...initialFilters,
   })
-  
+
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [suggestions, setSuggestions] = useState<Destination[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(false)
   const [countries, setCountries] = useState<string[]>([])
   const [availableFeatures, setAvailableFeatures] = useState<string[]>([])
@@ -70,6 +78,44 @@ export default function AdvancedSearch({
     onFiltersChange(filters)
     updateURL()
   }, [filters])
+
+  // Search suggestions effect
+  useEffect(() => {
+    if (filters.query.length > 2) {
+      setIsLoading(true)
+      const timer = setTimeout(() => {
+        try {
+          const destinations = DestinationsService.getMockDestinations()
+          const filtered = destinations.filter(destination =>
+            destination.name.toLowerCase().includes(filters.query.toLowerCase()) ||
+            destination.country.toLowerCase().includes(filters.query.toLowerCase()) ||
+            destination.city.toLowerCase().includes(filters.query.toLowerCase())
+          ).slice(0, 5)
+          setSuggestions(filtered)
+          setShowSuggestions(true)
+          setIsLoading(false)
+        } catch (error) {
+          console.error('Failed to load suggestions:', error)
+          setIsLoading(false)
+        }
+      }, 300)
+      return () => clearTimeout(timer)
+    } else {
+      setShowSuggestions(false)
+      setSuggestions([])
+    }
+  }, [filters.query])
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const loadFilterOptions = async () => {
     try {
@@ -259,42 +305,102 @@ export default function AdvancedSearch({
     )
   }
 
+  const selectSuggestion = (suggestion: Destination) => {
+    setFilters(prev => ({
+      ...prev,
+      query: suggestion.name,
+      country: suggestion.country
+    }))
+    setShowSuggestions(false)
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      {/* Basic Search */}
-      <div className="flex flex-col md:flex-row gap-4 mb-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <input
-            type="text"
-            placeholder="Search destinations, countries, or activities..."
-            value={filters.query}
-            onChange={(e) => updateFilter('query', e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
-        
-        <button
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className={`flex items-center px-4 py-3 border rounded-lg transition-colors ${
-            showAdvanced || hasActiveFilters()
-              ? 'border-primary bg-primary text-primary-foreground'
-              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <Filter className="h-5 w-5 mr-2" />
-          Filters
-          {hasActiveFilters() && (
-            <span className="ml-2 bg-white text-primary rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium">
-              {filters.features.length + (filters.country ? 1 : 0) + (filters.duration ? 1 : 0)}
-            </span>
-          )}
-        </button>
+    <FadeIn direction="up">
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+        {/* Enhanced Search */}
+        <div className="flex flex-col md:flex-row gap-6 mb-6">
+          <div className="flex-1 relative" ref={searchRef}>
+            <Input
+              placeholder="Search destinations, countries, or activities..."
+              value={filters.query}
+              onChange={(e) => updateFilter('query', e.target.value)}
+              leftIcon={<Search className="h-5 w-5" />}
+              rightIcon={
+                isLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : filters.query ? (
+                  <X
+                    className="h-5 w-5 cursor-pointer hover:text-gray-700"
+                    onClick={() => updateFilter('query', '')}
+                  />
+                ) : null
+              }
+              className="text-lg h-14 pr-12"
+              size="lg"
+            />
+
+            {/* Search Suggestions */}
+            <AnimatePresence>
+              {showSuggestions && suggestions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-xl z-50 mt-2 max-h-80 overflow-y-auto"
+                >
+                  {suggestions.map((suggestion) => (
+                    <motion.div
+                      key={suggestion.id}
+                      whileHover={{ backgroundColor: '#f8fafc' }}
+                      className="flex items-center p-4 cursor-pointer border-b border-gray-100 last:border-b-0"
+                      onClick={() => selectSuggestion(suggestion)}
+                    >
+                      <div className="w-12 h-12 bg-gray-200 rounded-lg mr-4 flex-shrink-0 overflow-hidden">
+                        {suggestion.images[0] && (
+                          <img
+                            src={suggestion.images[0]}
+                            alt={suggestion.name}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900">{suggestion.name}</div>
+                        <div className="text-sm text-gray-500">{suggestion.city}, {suggestion.country}</div>
+                        <div className="text-xs text-brand-600 font-medium">${suggestion.price}</div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <Button
+            variant={showAdvanced || hasActiveFilters() ? "primary" : "outline"}
+            size="lg"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            leftIcon={<Filter className="h-5 w-5" />}
+            className="h-14 px-8"
+          >
+            Filters
+            {hasActiveFilters() && (
+              <span className="ml-2 bg-white text-brand-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                {filters.features.length + (filters.country ? 1 : 0) + (filters.duration ? 1 : 0)}
+              </span>
+            )}
+          </Button>
       </div>
 
-      {/* Advanced Filters */}
-      {showAdvanced && (
-        <div className="border-t border-gray-200 pt-6 space-y-6">
+        {/* Advanced Filters */}
+        <AnimatePresence>
+          {showAdvanced && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="border-t border-gray-200 pt-8 space-y-8"
+            >
           {/* Location and Duration */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -435,31 +541,42 @@ export default function AdvancedSearch({
             </div>
           </div>
 
-          {/* Clear Filters */}
-          {hasActiveFilters() && (
-            <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-              <span className="text-sm text-gray-600">
-                {hasActiveFilters() ? 'Active filters applied' : 'No filters applied'}
-              </span>
-              <button
-                onClick={clearFilters}
-                className="flex items-center text-sm text-gray-600 hover:text-primary transition-colors"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Clear all filters
-              </button>
-            </div>
+              {/* Clear Filters */}
+              {hasActiveFilters() && (
+                <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+                  <span className="text-sm text-gray-600 font-medium">
+                    {hasActiveFilters() ? 'Active filters applied' : 'No filters applied'}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    leftIcon={<X className="h-4 w-4" />}
+                    className="text-gray-600 hover:text-brand-600"
+                  >
+                    Clear all filters
+                  </Button>
+                </div>
+              )}
+            </motion.div>
           )}
-        </div>
-      )}
+        </AnimatePresence>
 
-      {/* Loading indicator */}
-      {loading && (
-        <div className="flex items-center justify-center py-4">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-          <span className="ml-2 text-gray-600">Searching...</span>
-        </div>
-      )}
-    </div>
+        {/* Loading indicator */}
+        <AnimatePresence>
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center justify-center py-6"
+            >
+              <Loader2 className="h-6 w-6 animate-spin text-brand-500 mr-3" />
+              <span className="text-gray-600 font-medium">Searching destinations...</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </FadeIn>
   )
 }

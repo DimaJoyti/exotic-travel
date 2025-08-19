@@ -1,0 +1,426 @@
+/**
+ * Animated Components for Exotic Travel Booking Platform
+ * 
+ * Reusable animation components built with Framer Motion
+ * for consistent motion design across the application.
+ */
+
+'use client'
+
+import React from 'react'
+import { motion, HTMLMotionProps, Variants } from 'framer-motion'
+import { cn } from '@/lib/utils'
+import {
+  fadeVariants,
+  fadeInUp,
+  fadeInDown,
+  fadeInLeft,
+  fadeInRight,
+  scaleVariants,
+  scaleInCenter,
+  slideInLeft,
+  slideInRight,
+  slideInUp,
+  slideInDown,
+  rotateIn,
+  staggerContainer,
+  staggerItem,
+  pageTransition,
+  modalBackdrop,
+  modalContent,
+  floatAnimation,
+  pulseGlow,
+} from '@/lib/animations'
+
+// Base animated div component
+export interface AnimatedDivProps extends HTMLMotionProps<'div'> {
+  animation?: 'fade' | 'fadeInUp' | 'fadeInDown' | 'fadeInLeft' | 'fadeInRight' | 
+             'scale' | 'scaleInCenter' | 'slideInLeft' | 'slideInRight' | 
+             'slideInUp' | 'slideInDown' | 'rotateIn' | 'float' | 'pulseGlow'
+  delay?: number
+  duration?: number
+  children: React.ReactNode
+}
+
+const animationVariants: Record<string, Variants> = {
+  fade: fadeVariants,
+  fadeInUp,
+  fadeInDown,
+  fadeInLeft,
+  fadeInRight,
+  scale: scaleVariants,
+  scaleInCenter,
+  slideInLeft,
+  slideInRight,
+  slideInUp,
+  slideInDown,
+  rotateIn,
+  float: floatAnimation,
+  pulseGlow,
+}
+
+export const AnimatedDiv: React.FC<AnimatedDivProps> = ({
+  animation = 'fade',
+  delay = 0,
+  duration,
+  className,
+  children,
+  ...props
+}) => {
+  const variants = animationVariants[animation]
+  
+  // Create custom transition if duration is provided
+  const customTransition = duration ? { duration } : undefined
+  
+  return (
+    <motion.div
+      className={className}
+      variants={variants}
+      initial="hidden"
+      animate={animation === 'float' || animation === 'pulseGlow' ? 'animate' : 'visible'}
+      exit="exit"
+      transition={customTransition}
+      style={{ transitionDelay: `${delay}s` }}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+// Fade In Component
+export interface FadeInProps extends Omit<AnimatedDivProps, 'animation'> {
+  direction?: 'up' | 'down' | 'left' | 'right'
+}
+
+export const FadeIn: React.FC<FadeInProps> = ({
+  direction,
+  ...props
+}) => {
+  const animation = direction
+    ? `fadeIn${direction.charAt(0).toUpperCase() + direction.slice(1)}` as AnimatedDivProps['animation']
+    : 'fade' as AnimatedDivProps['animation']
+  return <AnimatedDiv animation={animation} {...props} />
+}
+
+// Scale In Component
+export const ScaleIn: React.FC<Omit<AnimatedDivProps, 'animation'>> = (props) => (
+  <AnimatedDiv animation="scale" {...props} />
+)
+
+// Slide In Component
+export interface SlideInProps extends Omit<AnimatedDivProps, 'animation'> {
+  direction: 'left' | 'right' | 'up' | 'down'
+}
+
+export const SlideIn: React.FC<SlideInProps> = ({
+  direction,
+  ...props
+}) => {
+  const animation = `slideIn${direction.charAt(0).toUpperCase() + direction.slice(1)}` as AnimatedDivProps['animation']
+  return <AnimatedDiv animation={animation} {...props} />
+}
+
+// Stagger Container for Lists
+export interface StaggerContainerProps extends HTMLMotionProps<'div'> {
+  staggerDelay?: number
+  children: React.ReactNode
+}
+
+export const StaggerContainer: React.FC<StaggerContainerProps> = ({
+  staggerDelay = 0.1,
+  className,
+  children,
+  ...props
+}) => {
+  const customVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: staggerDelay,
+        delayChildren: 0.1,
+      },
+    },
+    exit: {
+      opacity: 0,
+      transition: {
+        staggerChildren: 0.05,
+        staggerDirection: -1,
+      },
+    },
+  }
+
+  return (
+    <motion.div
+      className={className}
+      variants={customVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      {...props}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+// Stagger Item for use within StaggerContainer
+export const StaggerItem: React.FC<HTMLMotionProps<'div'>> = ({
+  className,
+  children,
+  ...props
+}) => (
+  <motion.div
+    className={className}
+    variants={staggerItem}
+    {...props}
+  >
+    {children}
+  </motion.div>
+)
+
+// Page Transition Wrapper
+export const PageTransition: React.FC<HTMLMotionProps<'div'>> = ({
+  className,
+  children,
+  ...props
+}) => (
+  <motion.div
+    className={cn('min-h-screen', className)}
+    variants={pageTransition}
+    initial="initial"
+    animate="animate"
+    exit="exit"
+    {...props}
+  >
+    {children}
+  </motion.div>
+)
+
+// Modal Animation Components
+export const ModalBackdrop: React.FC<HTMLMotionProps<'div'>> = ({
+  className,
+  children,
+  ...props
+}) => (
+  <motion.div
+    className={cn('fixed inset-0 bg-black/50 z-50', className)}
+    variants={modalBackdrop}
+    initial="hidden"
+    animate="visible"
+    exit="exit"
+    {...props}
+  >
+    {children}
+  </motion.div>
+)
+
+export const ModalContent: React.FC<HTMLMotionProps<'div'>> = ({
+  className,
+  children,
+  ...props
+}) => (
+  <motion.div
+    className={cn(
+      'fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2',
+      'bg-background p-6 shadow-lg rounded-lg border',
+      className
+    )}
+    variants={modalContent}
+    initial="hidden"
+    animate="visible"
+    exit="exit"
+    {...props}
+  >
+    {children}
+  </motion.div>
+)
+
+// Floating Animation Component (for travel-themed elements)
+export const FloatingElement: React.FC<HTMLMotionProps<'div'>> = ({
+  className,
+  children,
+  ...props
+}) => (
+  <motion.div
+    className={className}
+    variants={floatAnimation}
+    animate="animate"
+    {...props}
+  >
+    {children}
+  </motion.div>
+)
+
+// Pulse Glow Component (for special offers, CTAs)
+export const PulseGlow: React.FC<HTMLMotionProps<'div'>> = ({
+  className,
+  children,
+  ...props
+}) => (
+  <motion.div
+    className={className}
+    variants={pulseGlow}
+    animate="animate"
+    {...props}
+  >
+    {children}
+  </motion.div>
+)
+
+// Hover Animation Wrapper
+export interface HoverAnimationProps extends HTMLMotionProps<'div'> {
+  hoverScale?: number
+  hoverY?: number
+  tapScale?: number
+  children: React.ReactNode
+}
+
+export const HoverAnimation: React.FC<HoverAnimationProps> = ({
+  hoverScale = 1.02,
+  hoverY = -2,
+  tapScale = 0.98,
+  className,
+  children,
+  ...props
+}) => (
+  <motion.div
+    className={className}
+    whileHover={{ 
+      scale: hoverScale, 
+      y: hoverY,
+      transition: { duration: 0.2 }
+    }}
+    whileTap={{ 
+      scale: tapScale,
+      transition: { duration: 0.1 }
+    }}
+    {...props}
+  >
+    {children}
+  </motion.div>
+)
+
+// Parallax Component
+export interface ParallaxProps extends HTMLMotionProps<'div'> {
+  offset?: number
+  children: React.ReactNode
+}
+
+export const Parallax: React.FC<ParallaxProps> = ({
+  offset = 50,
+  className,
+  children,
+  ...props
+}) => (
+  <motion.div
+    className={className}
+    initial={{ y: offset }}
+    whileInView={{ y: 0 }}
+    viewport={{ once: true, amount: 0.3 }}
+    transition={{ duration: 0.6, ease: 'easeOut' }}
+    {...props}
+  >
+    {children}
+  </motion.div>
+)
+
+// Count Up Animation Component
+export interface CountUpProps {
+  from?: number
+  to: number
+  duration?: number
+  className?: string
+  suffix?: string
+  prefix?: string
+}
+
+export const CountUp: React.FC<CountUpProps> = ({
+  from = 0,
+  to,
+  duration = 2,
+  className,
+  suffix = '',
+  prefix = '',
+}) => {
+  const [count, setCount] = React.useState(from)
+
+  React.useEffect(() => {
+    let startTime: number
+    let animationFrame: number
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp
+      const progress = Math.min((timestamp - startTime) / (duration * 1000), 1)
+
+      const currentCount = from + (to - from) * progress
+      setCount(Math.round(currentCount))
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate)
+      }
+    }
+
+    animationFrame = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(animationFrame)
+  }, [from, to, duration])
+
+  return (
+    <motion.span
+      className={className}
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5 }}
+    >
+      {prefix}{count}{suffix}
+    </motion.span>
+  )
+}
+
+// Typewriter Effect Component
+export interface TypewriterProps {
+  text: string
+  delay?: number
+  speed?: number
+  className?: string
+}
+
+export const Typewriter: React.FC<TypewriterProps> = ({
+  text,
+  delay = 0,
+  speed = 50,
+  className,
+}) => {
+  const [displayText, setDisplayText] = React.useState('')
+  const [currentIndex, setCurrentIndex] = React.useState(0)
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentIndex < text.length) {
+        setDisplayText(prev => prev + text[currentIndex])
+        setCurrentIndex(prev => prev + 1)
+      }
+    }, currentIndex === 0 ? delay : speed)
+
+    return () => clearTimeout(timer)
+  }, [currentIndex, text, delay, speed])
+
+  return (
+    <motion.span
+      className={className}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: delay / 1000 }}
+    >
+      {displayText}
+      <motion.span
+        animate={{ opacity: [1, 0] }}
+        transition={{ duration: 0.8, repeat: Infinity, repeatType: 'reverse' }}
+      >
+        |
+      </motion.span>
+    </motion.span>
+  )
+}
