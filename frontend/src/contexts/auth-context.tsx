@@ -7,10 +7,15 @@ import { AuthService, LoginCredentials, RegisterCredentials } from '@/lib/auth'
 interface AuthContextType {
   user: User | null
   loading: boolean
+  isAuthenticated: boolean
   login: (credentials: LoginCredentials) => Promise<void>
   register: (credentials: RegisterCredentials) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
+  refreshToken: () => Promise<boolean>
+  hasPermission: (permission: string) => boolean
+  hasRole: (role: string | string[]) => boolean
+  updateUser: (userData: Partial<User>) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -18,8 +23,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
+
+  const isAuthenticated = mounted && !!user && !!AuthService.getToken()
 
   useEffect(() => {
+    setMounted(true)
+    
     const initAuth = async () => {
       try {
         const token = AuthService.getToken()
@@ -87,13 +97,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const refreshToken = async (): Promise<boolean> => {
+    try {
+      const token = await AuthService.refreshToken()
+      if (token) {
+        await refreshUser()
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Failed to refresh token:', error)
+      return false
+    }
+  }
+
+  const hasPermission = (permission: string): boolean => {
+    if (!user || !user.permissions) {
+      return false
+    }
+
+    // Check for wildcard permissions
+    const hasWildcard = user.permissions.some(perm => {
+      const [resource] = perm.split(':')
+      return perm === `${resource}:*` && permission.startsWith(`${resource}:`)
+    })
+
+    return hasWildcard || user.permissions.includes(permission)
+  }
+
+  const hasRole = (role: string | string[]): boolean => {
+    if (!user) {
+      return false
+    }
+
+    const roles = Array.isArray(role) ? role : [role]
+    return roles.includes(user.role)
+  }
+
+  const updateUser = (userData: Partial<User>) => {
+    if (!user) return
+
+    const updatedUser = { ...user, ...userData }
+    setUser(updatedUser)
+    AuthService.setUser(updatedUser)
+  }
+
   const value: AuthContextType = {
     user,
     loading,
+    isAuthenticated,
     login,
     register,
     logout,
     refreshUser,
+    refreshToken,
+    hasPermission,
+    hasRole,
+    updateUser,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

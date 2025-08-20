@@ -81,7 +81,7 @@ export function SimpleWishlistButton({
         }
 
         localStorage.setItem('exotic_travel_wishlist', JSON.stringify(items))
-        onToggle?.(isInWishlist)
+        onToggle?.(!isInWishlist)
       }
     } catch (error) {
       console.error('Error toggling wishlist:', error)

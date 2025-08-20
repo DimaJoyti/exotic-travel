@@ -88,6 +88,7 @@
     "@testing-library/jest-dom": "^6.7.0",
     "@testing-library/react": "^14.3.1",
     "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
     "@typescript-eslint/eslint-plugin": "^8.39.1",
     "@typescript-eslint/parser": "^8.39.1",
     "@vitest/browser": "^3.2.4",
