@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { AuthProvider } from '@/contexts/auth-context'
+import ClientProviders from '@/components/providers/client-providers'
 import LayoutWrapper from '@/components/layout/layout-wrapper'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -20,13 +20,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className} suppressHydrationWarning={true}>
-        <AuthProvider>
+        <ClientProviders>
           <div className="min-h-screen bg-background flex flex-col">
             <LayoutWrapper>
               {children}
             </LayoutWrapper>
           </div>
-        </AuthProvider>
+        </ClientProviders>
       </body>
     </html>
   )

@@ -2,11 +2,10 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { MapPin, Clock, Users, Star, Heart, ArrowRight } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { MapPin, Clock, Users, Star, ArrowRight, Heart } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import WishlistButton from '@/components/wishlist/wishlist-button'
+import { SimpleWishlistButton } from '@/components/wishlist/simple-wishlist-button'
 import { Destination } from '@/types'
 
 interface FeaturedDestinationsProps {
@@ -66,144 +65,115 @@ export default function FeaturedDestinations({ destinations = [] }: FeaturedDest
     <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-display font-bold text-gray-900 mb-6">
             Featured Destinations
           </h2>
           <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
             Discover our most popular exotic destinations, carefully curated for unforgettable experiences
           </p>
-        </motion.div>
+        </div>
 
         {/* Destinations Grid */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ staggerChildren: 0.2, delayChildren: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16"
-        >
-          {displayDestinations.map((destination, index) => (
-            <motion.div
-              key={destination.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.2 }}
-              whileHover={{ y: -8, scale: 1.02 }}
-            >
-              <div className="bg-white rounded-3xl shadow-xl overflow-hidden group border border-gray-100">
-                {/* Image */}
-                <div className="relative h-72 overflow-hidden">
-                  <Image
-                    src={destination.images[0] || '/placeholder-destination.jpg'}
-                    alt={destination.name}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          {displayDestinations.map((destination) => (
+            <div key={destination.id} className="bg-white rounded-3xl shadow-xl overflow-hidden group border border-gray-100 hover:transform hover:scale-105 transition-transform duration-200">
+              {/* Image */}
+              <div className="relative h-72 overflow-hidden">
+                <Image
+                  src={destination.images[0] || '/placeholder-destination.jpg'}
+                  alt={destination.name}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-700"
+                />
 
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-                  {/* Rating Badge */}
-                  <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg">
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                      <span className="text-sm font-semibold text-gray-900">4.9</span>
-                    </div>
-                  </div>
-
-                  {/* Wishlist Button */}
-                  <div className="absolute top-4 left-4">
-                    <WishlistButton
-                      destination={destination}
-                      size="md"
-                      variant="icon"
-                    />
-                  </div>
-
-                  {/* Price Badge */}
-                  <div className="absolute bottom-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-full font-bold shadow-lg">
-                    {formatCurrency(destination.price)}
+                {/* Rating Badge */}
+                <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg">
+                  <div className="flex items-center space-x-1">
+                    <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                    <span className="text-sm font-semibold text-gray-900">4.9</span>
                   </div>
                 </div>
-                
-                {/* Content */}
-                <div className="p-8">
-                  <div className="flex items-center text-sm text-gray-500 mb-3">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    {destination.city}, {destination.country}
-                  </div>
 
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
-                    {destination.name}
-                  </h3>
+                {/* Wishlist Button */}
+                <div className="absolute top-4 left-4">
+                  <SimpleWishlistButton
+                    destinationId={destination.id}
+                    size="md"
+                  />
+                </div>
 
-                  <p className="text-gray-600 mb-6 line-clamp-2 leading-relaxed">
-                    {destination.description}
-                  </p>
-
-                  {/* Features */}
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {destination.features.slice(0, 2).map((feature, featureIndex) => (
-                      <span
-                        key={featureIndex}
-                        className="bg-blue-50 text-blue-700 text-sm px-3 py-1.5 rounded-full font-medium"
-                      >
-                        {feature}
-                      </span>
-                    ))}
-                    {destination.features.length > 2 && (
-                      <span className="text-sm text-gray-500 px-3 py-1.5">
-                        +{destination.features.length - 2} more
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 mr-1" />
-                      {destination.duration} days
-                    </div>
-                    <div className="flex items-center">
-                      <Users className="h-4 w-4 mr-1" />
-                      Up to {destination.max_guests} guests
-                    </div>
-                  </div>
-
-                  {/* CTA */}
-                  <Link href={`/destinations/${destination.id}`}>
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      className="w-full font-semibold shadow-lg hover:shadow-xl"
-                      rightIcon={<ArrowRight className="h-4 w-4" />}
-                    >
-                      View Details
-                    </Button>
-                  </Link>
+                {/* Price Badge */}
+                <div className="absolute bottom-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-full font-bold shadow-lg">
+                  {formatCurrency(destination.price)}
                 </div>
               </div>
-            </motion.div>
-          ))}
-        </motion.div>
+              
+              {/* Content */}
+              <div className="p-8">
+                <div className="flex items-center text-sm text-gray-500 mb-3">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  {destination.city}, {destination.country}
+                </div>
 
+                <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
+                  {destination.name}
+                </h3>
+
+                <p className="text-gray-600 mb-6 line-clamp-2 leading-relaxed">
+                  {destination.description}
+                </p>
+
+                {/* Features */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {destination.features.slice(0, 2).map((feature, featureIndex) => (
+                    <span
+                      key={featureIndex}
+                      className="bg-blue-50 text-blue-700 text-sm px-3 py-1.5 rounded-full font-medium"
+                    >
+                      {feature}
+                    </span>
+                  ))}
+                  {destination.features.length > 2 && (
+                    <span className="text-sm text-gray-500 px-3 py-1.5">
+                      +{destination.features.length - 2} more
+                    </span>
+                  )}
+                </div>
+
+                {/* Details */}
+                <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {destination.duration} days
+                  </div>
+                  <div className="flex items-center">
+                    <Users className="h-4 w-4 mr-1" />
+                    Up to {destination.max_guests} guests
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <Link href={`/destinations/${destination.id}`}>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    className="w-full font-semibold shadow-lg hover:shadow-xl"
+                    rightIcon={<ArrowRight className="h-4 w-4" />}
+                  >
+                    View Details
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* View All Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-center"
-        >
+        <div className="text-center">
           <Link href="/destinations">
             <Button
               variant="outline"
@@ -214,7 +184,7 @@ export default function FeaturedDestinations({ destinations = [] }: FeaturedDest
               View All Destinations
             </Button>
           </Link>
-        </motion.div>
+        </div>
       </div>
     </section>
   )

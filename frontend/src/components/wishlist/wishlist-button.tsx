@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Destination } from '@/types'
 import { WishlistService, WishlistItem } from '@/lib/wishlist'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface WishlistButtonProps {
   destination: Destination
@@ -16,7 +17,7 @@ interface WishlistButtonProps {
   onWishlistChange?: (isInWishlist: boolean, item?: WishlistItem) => void
 }
 
-export default function WishlistButton({
+export function WishlistButton({
   destination,
   size = 'md',
   variant = 'icon',
@@ -31,11 +32,19 @@ export default function WishlistButton({
 
   // Check if destination is in wishlist
   useEffect(() => {
+    if (!destination?.id) return
+
     const checkWishlistStatus = () => {
-      const inWishlist = WishlistService.isInWishlist(destination.id.toString())
-      const item = WishlistService.getWishlistItem(destination.id.toString())
-      setIsInWishlist(inWishlist)
-      setWishlistItem(item)
+      if (typeof window !== 'undefined') {
+        try {
+          const inWishlist = WishlistService.isInWishlist(destination.id.toString())
+          const item = WishlistService.getWishlistItem(destination.id.toString())
+          setIsInWishlist(inWishlist)
+          setWishlistItem(item)
+        } catch (error) {
+          console.error('Error checking wishlist status:', error)
+        }
+      }
     }
 
     checkWishlistStatus()
@@ -43,7 +52,7 @@ export default function WishlistButton({
     // Listen for wishlist changes
     const unsubscribe = WishlistService.addListener(checkWishlistStatus)
     return unsubscribe
-  }, [destination.id])
+  }, [destination?.id])
 
   const handleToggleWishlist = async () => {
     if (isLoading) return
@@ -93,16 +102,17 @@ export default function WishlistButton({
         size={size}
         onClick={handleToggleWishlist}
         disabled={isLoading}
-        className={`relative overflow-hidden ${className}`}
+        className={cn("relative overflow-hidden", className)}
         leftIcon={
           isLoading ? (
-            <Loader2 className={`${iconSizes[size]} animate-spin`} />
+            <Loader2 className={cn(iconSizes[size], "animate-spin")} />
           ) : isInWishlist ? (
-            <Heart className={`${iconSizes[size]} fill-current`} />
+            <Heart className={cn(iconSizes[size], "fill-current")} />
           ) : (
             <Heart className={iconSizes[size]} />
           )
         }
+        aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
       >
         {showLabel && (
           <span className="ml-2">
@@ -117,9 +127,9 @@ export default function WishlistButton({
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
-              className="absolute inset-0 bg-green-500 flex items-center justify-center"
+              className="absolute inset-0 bg-green-500 flex items-center justify-center z-10"
             >
-              <Check className={`${iconSizes[size]} text-white`} />
+              <Check className={cn(iconSizes[size], "text-white")} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -129,42 +139,44 @@ export default function WishlistButton({
 
   return (
     <motion.button
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
       onClick={handleToggleWishlist}
       disabled={isLoading}
-      className={`
-        ${sizeClasses[size]} 
-        relative flex items-center justify-center rounded-full 
-        bg-white/90 backdrop-blur-sm border border-white/30 
-        hover:bg-white transition-all duration-200 shadow-lg
-        ${isInWishlist ? 'text-red-500' : 'text-gray-600 hover:text-red-500'}
-        ${className}
-      `}
+      aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+      className={cn(
+        sizeClasses[size],
+        "relative flex items-center justify-center rounded-full",
+        "bg-white/90 backdrop-blur-sm border border-white/30",
+        "hover:bg-white transition-all duration-200 shadow-lg",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2",
+        isInWishlist ? "text-red-500" : "text-gray-600 hover:text-red-500",
+        className
+      )}
     >
       {/* Loading State */}
       {isLoading && (
-        <Loader2 className={`${iconSizes[size]} animate-spin`} />
+        <Loader2 className={cn(iconSizes[size], "animate-spin")} />
       )}
 
       {/* Heart Icon with Animation */}
       {!isLoading && (
         <motion.div
           key={isInWishlist ? 'filled' : 'empty'}
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ 
-            type: 'spring', 
-            stiffness: 500, 
-            damping: 15 
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{
+            type: 'spring',
+            stiffness: 500,
+            damping: 15
           }}
         >
-          <Heart 
-            className={`
-              ${iconSizes[size]} 
-              ${isInWishlist ? 'fill-current' : ''}
-              transition-colors duration-200
-            `} 
+          <Heart
+            className={cn(
+              iconSizes[size],
+              isInWishlist ? "fill-current" : "",
+              "transition-colors duration-200"
+            )}
           />
         </motion.div>
       )}
@@ -252,8 +264,10 @@ export function WishlistCounter({ className = '' }: WishlistCounterProps) {
 
   useEffect(() => {
     const updateCount = () => {
-      const wishlist = WishlistService.getWishlist()
-      setCount(wishlist.length)
+      if (typeof window !== 'undefined') {
+        const wishlist = WishlistService.getWishlist()
+        setCount(wishlist.length)
+      }
     }
 
     updateCount()
@@ -385,3 +399,6 @@ export function QuickWishlist({ destinations, onComplete, className = '' }: Quic
     </div>
   )
 }
+
+// Default export for backward compatibility
+export default WishlistButton

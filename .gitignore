@@ -85,3 +85,4 @@ CLAUDE.md
 .env.production
 *storybook.log
 storybook-static
+backend/bin

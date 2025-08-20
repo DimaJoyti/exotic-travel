@@ -28,6 +28,8 @@ func (f *ProviderFactory) CreateProvider(config *LLMConfig) (LLMProvider, error)
 		return NewAnthropicProvider(config)
 	case "local":
 		return NewLocalProvider(config)
+	case "ollama":
+		return NewOllamaProvider(config)
 	default:
 		return nil, fmt.Errorf("unsupported provider: %s", config.Provider)
 	}

@@ -43,7 +43,7 @@ class WishlistService {
   // Local Storage Management
   private static getStoredWishlist(): WishlistItem[] {
     if (typeof window === 'undefined') return []
-    
+
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY)
       return stored ? JSON.parse(stored) : []

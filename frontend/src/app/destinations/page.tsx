@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSafeSearchParams } from '@/hooks/use-safe-search-params'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Search, Filter, MapPin, Clock, Users, Star, Grid, List } from 'lucide-react'
@@ -12,7 +12,7 @@ import StarRating from '@/components/reviews/star-rating'
 import OptimizedImage from '@/components/images/optimized-image'
 
 function DestinationsPageContent() {
-  const searchParams = useSearchParams()
+  const searchParams = useSafeSearchParams()
   const [destinations, setDestinations] = useState<Destination[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import { useSafeSearchParams } from '@/hooks/use-safe-search-params'
 import { Search, Filter, X, Calendar, Users, DollarSign, MapPin, Star, Loader2, ArrowRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DestinationsService } from '@/lib/destinations'
@@ -35,7 +36,7 @@ export default function AdvancedSearch({
   initialFilters = {},
 }: AdvancedSearchProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const searchParams = useSafeSearchParams()
   
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',

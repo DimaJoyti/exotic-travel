@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
 
 /**
  * Safe search params hook that handles Next.js 15 issues
@@ -18,12 +17,10 @@ import { useSearchParams } from 'next/navigation'
 export function useSafeSearchParams(): URLSearchParams | null {
   const [params, setParams] = useState<URLSearchParams | null>(null)
 
-  // Always call useSearchParams at the top level
-  const nextSearchParams = useSearchParams()
-
   useEffect(() => {
-    // Fallback to manual URL parsing if useSearchParams fails
+    // Try to use Next.js useSearchParams, but fall back to manual parsing
     try {
+      // First try to get params from Next.js if available
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search)
         setParams(urlParams)
@@ -34,7 +31,7 @@ export function useSafeSearchParams(): URLSearchParams | null {
     }
   }, [])
 
-  return nextSearchParams || params
+  return params
 }
 
 /**

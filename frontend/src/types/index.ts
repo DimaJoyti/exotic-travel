@@ -79,16 +79,6 @@ export interface ReviewStats {
   }
 }
 
-export interface Review {
-  id: number
-  user_id: number
-  destination_id: number
-  rating: number
-  comment: string
-  created_at: string
-  user?: User
-}
-
 export interface AuthResponse {
   token: string
   user: User

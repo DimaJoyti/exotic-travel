@@ -11,6 +11,7 @@ import (
 	"github.com/exotic-travel-booking/backend/internal/api/middleware"
 	"github.com/exotic-travel-booking/backend/internal/llm"
 	"github.com/exotic-travel-booking/backend/internal/llm/providers"
+	"github.com/exotic-travel-booking/backend/internal/services"
 	"github.com/exotic-travel-booking/backend/internal/tools"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
@@ -97,6 +98,10 @@ func setupRouter(llmManager *llm.LLMManager, toolRegistry *tools.ToolRegistry) h
 	// Create handlers
 	travelHandler := handlers.NewTravelHandler(llmManager, toolRegistry)
 
+	// Create Ollama service and handlers
+	ollamaService := services.NewOllamaService("http://localhost:11434")
+	ollamaHandler := handlers.NewOllamaHandlers(ollamaService)
+
 	// Apply middleware
 	handler := middleware.Chain(
 		mux,
@@ -114,6 +119,15 @@ func setupRouter(llmManager *llm.LLMManager, toolRegistry *tools.ToolRegistry) h
 	mux.HandleFunc("/api/v1/travel/weather", travelHandler.GetWeather)
 	mux.HandleFunc("/api/v1/travel/locations/search", travelHandler.SearchLocations)
 	mux.HandleFunc("/api/v1/travel/tools", travelHandler.GetTools)
+
+	// Ollama routes
+	mux.HandleFunc("/api/v1/ollama/health", ollamaHandler.HealthCheck)
+	mux.HandleFunc("/api/v1/ollama/models", ollamaHandler.ListModels)
+	mux.HandleFunc("/api/v1/ollama/models/status", ollamaHandler.GetModelStatus)
+	mux.HandleFunc("/api/v1/ollama/models/pull", ollamaHandler.PullModel)
+	mux.HandleFunc("/api/v1/ollama/models/ensure", ollamaHandler.EnsureModel)
+	mux.HandleFunc("/api/v1/ollama/generate", ollamaHandler.Generate)
+	// Note: DELETE /api/v1/ollama/models/{model} is handled by DeleteModel method
 
 	// Health check
 	mux.HandleFunc("/health", travelHandler.HealthCheck)
@@ -251,6 +265,18 @@ func initializeLLMProviders(manager *llm.LLMManager) error {
 
 	if err := manager.AddProvider("anthropic", anthropicConfig); err != nil {
 		log.Printf("Warning: Failed to initialize Anthropic provider: %v", err)
+	}
+
+	// Ollama provider (for local inference)
+	ollamaConfig := &providers.LLMConfig{
+		Provider: "ollama",
+		Model:    "llama3.2", // Default model, can be overridden
+		BaseURL:  "http://localhost:11434",
+		Timeout:  60 * time.Second,
+	}
+
+	if err := manager.AddProvider("ollama", ollamaConfig); err != nil {
+		log.Printf("Warning: Failed to initialize Ollama provider: %v", err)
 	}
 
 	// Local provider (for development/testing)

@@ -3,6 +3,7 @@ package providers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
@@ -17,14 +18,14 @@ type LocalProvider struct {
 // NewLocalProvider creates a new local provider
 func NewLocalProvider(config *LLMConfig) (LLMProvider, error) {
 	base := NewBaseProvider(config, "local")
-	
+
 	// Local provider doesn't require API key validation
 	if config.Model == "" {
 		return nil, fmt.Errorf("model is required for local provider")
 	}
-	
+
 	tracer := otel.Tracer("llm.local")
-	
+
 	return &LocalProvider{
 		BaseProvider: base,
 		tracer:       tracer,
@@ -35,16 +36,16 @@ func NewLocalProvider(config *LLMConfig) (LLMProvider, error) {
 func (p *LocalProvider) GenerateResponse(ctx context.Context, req *GenerateRequest) (*GenerateResponse, error) {
 	ctx, span := p.tracer.Start(ctx, "local.generate_response")
 	defer span.End()
-	
+
 	// This is a placeholder implementation
 	// In a real implementation, this would interface with:
 	// - Ollama
 	// - llama.cpp
 	// - Hugging Face Transformers
 	// - Custom model serving infrastructure
-	
+
 	prepared := p.PrepareRequest(req)
-	
+
 	// Mock response for demonstration
 	mockResponse := &GenerateResponse{
 		ID:      "local-" + fmt.Sprintf("%d", ctx.Value("request_id")),
@@ -67,7 +68,7 @@ func (p *LocalProvider) GenerateResponse(ctx context.Context, req *GenerateReque
 			TotalTokens:      150,
 		},
 	}
-	
+
 	return mockResponse, nil
 }
 
@@ -75,16 +76,16 @@ func (p *LocalProvider) GenerateResponse(ctx context.Context, req *GenerateReque
 func (p *LocalProvider) StreamResponse(ctx context.Context, req *GenerateRequest) (<-chan *StreamChunk, error) {
 	ctx, span := p.tracer.Start(ctx, "local.stream_response")
 	defer span.End()
-	
+
 	// This is a placeholder implementation
 	chunks := make(chan *StreamChunk, 10)
-	
+
 	go func() {
 		defer close(chunks)
-		
+
 		// Mock streaming response
 		words := []string{"This", "is", "a", "mock", "streaming", "response", "from", "local", "provider"}
-		
+
 		for i, word := range words {
 			select {
 			case <-ctx.Done():
@@ -107,7 +108,7 @@ func (p *LocalProvider) StreamResponse(ctx context.Context, req *GenerateRequest
 			}:
 			}
 		}
-		
+
 		// Send final chunk
 		finishReason := "stop"
 		chunks <- &StreamChunk{
@@ -117,8 +118,8 @@ func (p *LocalProvider) StreamResponse(ctx context.Context, req *GenerateRequest
 			Model:   req.Model,
 			Choices: []StreamChoice{
 				{
-					Index: 0,
-					Delta: MessageDelta{},
+					Index:        0,
+					Delta:        MessageDelta{},
 					FinishReason: &finishReason,
 				},
 			},
@@ -129,7 +130,7 @@ func (p *LocalProvider) StreamResponse(ctx context.Context, req *GenerateRequest
 			},
 		}
 	}()
-	
+
 	return chunks, nil
 }
 
@@ -158,28 +159,185 @@ func (p *LocalProvider) Close() error {
 
 // Example of how to extend LocalProvider for specific local model implementations
 
-// OllamaProvider could be a specific implementation for Ollama
+// OllamaProvider implements LLMProvider for Ollama
 type OllamaProvider struct {
-	*LocalProvider
-	ollamaURL string
+	*BaseProvider
+	client *OllamaClient
+	tracer trace.Tracer
 }
 
 // NewOllamaProvider creates a provider for Ollama
 func NewOllamaProvider(config *LLMConfig) (LLMProvider, error) {
-	localProvider, err := NewLocalProvider(config)
-	if err != nil {
+	base := NewBaseProvider(config, "ollama")
+	if err := base.ValidateConfig(); err != nil {
 		return nil, err
 	}
-	
+
 	ollamaURL := config.BaseURL
 	if ollamaURL == "" {
 		ollamaURL = "http://localhost:11434"
 	}
-	
+
+	timeout := 30 * time.Second
+	if config.Timeout > 0 {
+		timeout = config.Timeout
+	}
+
+	client := NewOllamaClient(ollamaURL, timeout)
+	tracer := otel.Tracer("llm.ollama")
+
 	return &OllamaProvider{
-		LocalProvider: localProvider.(*LocalProvider),
-		ollamaURL:     ollamaURL,
+		BaseProvider: base,
+		client:       client,
+		tracer:       tracer,
 	}, nil
+}
+
+// GenerateResponse generates a response using Ollama
+func (p *OllamaProvider) GenerateResponse(ctx context.Context, req *GenerateRequest) (*GenerateResponse, error) {
+	ctx, span := p.tracer.Start(ctx, "ollama.generate_response")
+	defer span.End()
+
+	prepared := p.PrepareRequest(req)
+
+	var response *GenerateResponse
+	err := p.WithRetry(ctx, func() error {
+		ollamaReq := p.convertToOllamaRequest(prepared)
+
+		ollamaResp, err := p.client.Chat(ctx, ollamaReq)
+		if err != nil {
+			return err
+		}
+
+		response = p.convertFromOllamaResponse(ollamaResp)
+		return nil
+	})
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, err
+	}
+
+	return response, nil
+}
+
+// StreamResponse generates a streaming response using Ollama
+func (p *OllamaProvider) StreamResponse(ctx context.Context, req *GenerateRequest) (<-chan *StreamChunk, error) {
+	prepared := p.PrepareRequest(req)
+	ollamaReq := p.convertToOllamaRequest(prepared)
+
+	ollamaStream, err := p.client.ChatStream(ctx, ollamaReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert Ollama stream to provider stream
+	providerStream := make(chan *StreamChunk)
+	go func() {
+		defer close(providerStream)
+		for ollamaChunk := range ollamaStream {
+			chunk := p.convertOllamaStreamChunk(ollamaChunk)
+			select {
+			case providerStream <- chunk:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return providerStream, nil
+}
+
+// GetModels returns available models from Ollama
+func (p *OllamaProvider) GetModels(ctx context.Context) ([]string, error) {
+	modelsResp, err := p.client.ListModels(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	models := make([]string, len(modelsResp.Models))
+	for i, model := range modelsResp.Models {
+		models[i] = model.Name
+	}
+
+	return models, nil
+}
+
+// convertToOllamaRequest converts a GenerateRequest to OllamaChatRequest
+func (p *OllamaProvider) convertToOllamaRequest(req *GenerateRequest) *OllamaChatRequest {
+	messages := make([]OllamaChatMessage, len(req.Messages))
+	for i, msg := range req.Messages {
+		messages[i] = OllamaChatMessage{
+			Role:    msg.Role,
+			Content: msg.Content,
+		}
+	}
+
+	options := make(map[string]interface{})
+	if req.Temperature > 0 {
+		options["temperature"] = req.Temperature
+	}
+	if req.MaxTokens > 0 {
+		options["num_predict"] = req.MaxTokens
+	}
+	if req.TopP > 0 {
+		options["top_p"] = req.TopP
+	}
+
+	return &OllamaChatRequest{
+		Model:    req.Model,
+		Messages: messages,
+		Stream:   false,
+		Options:  options,
+	}
+}
+
+// convertFromOllamaResponse converts OllamaChatResponse to GenerateResponse
+func (p *OllamaProvider) convertFromOllamaResponse(resp *OllamaChatResponse) *GenerateResponse {
+	return &GenerateResponse{
+		Choices: []Choice{
+			{
+				Message: Message{
+					Role:    resp.Message.Role,
+					Content: resp.Message.Content,
+				},
+				FinishReason: "stop",
+			},
+		},
+		Usage: Usage{
+			PromptTokens:     0, // Ollama doesn't provide token counts in the same way
+			CompletionTokens: 0,
+			TotalTokens:      0,
+		},
+		Model: resp.Model,
+	}
+}
+
+// convertOllamaStreamChunk converts OllamaChatResponse to StreamChunk
+func (p *OllamaProvider) convertOllamaStreamChunk(resp *OllamaChatResponse) *StreamChunk {
+	var finishReason *string
+	if resp.Done {
+		reason := "stop"
+		finishReason = &reason
+	}
+
+	return &StreamChunk{
+		ID:      fmt.Sprintf("chatcmpl-%d", time.Now().Unix()),
+		Object:  "chat.completion.chunk",
+		Created: time.Now().Unix(),
+		Model:   resp.Model,
+		Choices: []StreamChoice{
+			{
+				Index: 0,
+				Delta: MessageDelta{
+					Role:    resp.Message.Role,
+					Content: resp.Message.Content,
+				},
+				FinishReason: finishReason,
+			},
+		},
+		Done: resp.Done,
+	}
 }
 
 // LlamaCppProvider could be a specific implementation for llama.cpp
@@ -194,12 +352,12 @@ func NewLlamaCppProvider(config *LLMConfig) (LLMProvider, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	serverURL := config.BaseURL
 	if serverURL == "" {
 		serverURL = "http://localhost:8080"
 	}
-	
+
 	return &LlamaCppProvider{
 		LocalProvider: localProvider.(*LocalProvider),
 		serverURL:     serverURL,
@@ -218,12 +376,12 @@ func NewHuggingFaceProvider(config *LLMConfig) (LLMProvider, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	modelPath := config.BaseURL
 	if modelPath == "" {
 		modelPath = "./models"
 	}
-	
+
 	return &HuggingFaceProvider{
 		LocalProvider: localProvider.(*LocalProvider),
 		modelPath:     modelPath,
